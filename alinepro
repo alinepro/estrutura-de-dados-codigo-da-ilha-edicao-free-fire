@@ -1,0 +1,139 @@
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_ITENS 10
+#define TAM_STR 50
+
+// Código da Ilha – Edição Free Fire
+// Nível Novato: Inventário Básico de Sobrevivência
+
+// Struct Item:
+// Representa um componente com nome, tipo e quantidade.
+typedef struct {
+    char nome[TAM_STR];
+    char tipo[TAM_STR];
+    int quantidade;
+} Item;
+
+// Protótipos das funções
+void exibirMenu();
+void inserirItem(Item mochila[], int *numItens);
+void removerItem(Item mochila[], int *numItens);
+void listarItens(Item mochila[], int numItens);
+
+int main() {
+    Item mochila[MAX_ITENS];   // Vetor estático para armazenar os itens
+    int numItens = 0;          // Controle da quantidade atual de itens
+    int opcao;
+
+    do {
+        exibirMenu();
+        printf("Escolha uma opcao: ");
+        scanf("%d", &opcao);
+
+        switch (opcao) {
+            case 1:
+                inserirItem(mochila, &numItens);
+                break;
+            case 2:
+                removerItem(mochila, &numItens);
+                break;
+            case 3:
+                listarItens(mochila, numItens);
+                break;
+            case 0:
+                printf("\nEncerrando o sistema... Boa sorte na fuga da ilha! 🏝️🔥\n");
+                break;
+            default:
+                printf("\nOpcao invalida. Tente novamente.\n");
+        }
+
+    } while (opcao != 0);
+
+    return 0;
+}
+
+// Exibe o menu principal
+void exibirMenu() {
+    printf("\n===== CODIGO DA ILHA – FREE FIRE =====\n");
+    printf("1. Adicionar item na mochila\n");
+    printf("2. Remover item pelo nome\n");
+    printf("3. Listar itens da mochila\n");
+    printf("0. Sair\n");
+    printf("====================================\n");
+}
+
+// Adiciona um novo item à mochila
+void inserirItem(Item mochila[], int *numItens) {
+    if (*numItens >= MAX_ITENS) {
+        printf("\nMochila cheia! Nao e possivel adicionar mais itens.\n");
+        return;
+    }
+
+    Item novo;
+
+    printf("\nDigite o nome do item: ");
+    scanf(" %[^\n]", novo.nome);
+
+    printf("Digite o tipo do item: ");
+    scanf(" %[^\n]", novo.tipo);
+
+    printf("Digite a quantidade: ");
+    scanf("%d", &novo.quantidade);
+
+    mochila[*numItens] = novo;
+    (*numItens)++;
+
+    printf("\nItem adicionado com sucesso!\n");
+}
+
+// Remove um item da mochila pelo nome
+void removerItem(Item mochila[], int *numItens) {
+    if (*numItens == 0) {
+        printf("\nA mochila esta vazia. Nenhum item para remover.\n");
+        return;
+    }
+
+    char nomeBusca[TAM_STR];
+    int encontrado = 0;
+
+    printf("\nDigite o nome do item a ser removido: ");
+    scanf(" %[^\n]", nomeBusca);
+
+    for (int i = 0; i < *numItens; i++) {
+        if (strcmp(mochila[i].nome, nomeBusca) == 0) {
+            for (int j = i; j < *numItens - 1; j++) {
+                mochila[j] = mochila[j + 1];
+            }
+            (*numItens)--;
+            encontrado = 1;
+            printf("\nItem removido com sucesso!\n");
+            break;
+        }
+    }
+
+    if (!encontrado) {
+        printf("\nItem nao encontrado na mochila.\n");
+    }
+}
+
+// Lista todos os itens cadastrados
+void listarItens(Item mochila[], int numItens) {
+    if (numItens == 0) {
+        printf("\nMochila vazia. Nenhum item cadastrado.\n");
+        return;
+    }
+
+    printf("\n===== ITENS NA MOCHILA =====\n");
+    printf("%-20s %-20s %-10s\n", "Nome", "Tipo", "Quantidade");
+    printf("-----------------------------------------------\n");
+
+    for (int i = 0; i < numItens; i++) {
+        printf("%-20s %-20s %-10d\n",
+               mochila[i].nome,
+               mochila[i].tipo,
+               mochila[i].quantidade);
+    }
+
+    printf("-----------------------------------------------\n");
+}
