@@ -1,0 +1,276 @@
+#include <stdio.h>   // Entrada e saída padrão
+#include <stdlib.h>  // Funções utilitárias
+#include <string.h>  // Manipulação de strings (strcmp, strcspn)
+#include <time.h>    // Medição de tempo (clock)
+
+#define MAX_COMPONENTES 20
+
+
+// Struct Componente
+// Representa um componente necessário para a montagem da torre de fuga da ilha.
+// Campos exigidos:
+// - nome (string)
+// - tipo (string)
+// - prioridade (inteiro de 1 a 10)
+
+typedef struct {
+    char nome[30];
+    char tipo[20];
+    int prioridade;
+} Componente;
+
+
+// Protótipos das funções obrigatórias
+// Cada algoritmo de ordenação está em sua própria função, conforme exigido pelo enunciado (modularização).
+void bubbleSortNome(Componente v[], int n, int *comparacoes);
+void insertionSortTipo(Componente v[], int n, int *comparacoes);
+void selectionSortPrioridade(Componente v[], int n, int *comparacoes);
+
+int buscaBinariaPorNome(Componente v[], int n, char chave[]);
+void mostrarComponentes(Componente v[], int n);
+
+// Função genérica para medir tempo de execução de algoritmos
+void medirTempoOrdenacao(void (*algoritmo)(Componente[], int, int*),
+                         Componente v[], int n, int *comparacoes,
+                         const char *nomeAlgoritmo);
+
+
+// Função auxiliar para limpar o '\n' lido pelo fgets
+
+void limparQuebraLinha(char *str) {
+    str[strcspn(str, "\n")] = '\0';
+}
+
+int main() {
+    Componente componentes[MAX_COMPONENTES];
+    int total = 0;
+    int opcao;
+    int comparacoes = 0;
+    int ordenadoPorNome = 0; // Flag para permitir busca binária apenas quando ordenado por nome
+
+    printf("===== CODIGO DA ILHA – NIVEL MESTRE =====\n");
+
+    do {
+        printf("\n===== MENU =====\n");
+        printf("1 - Cadastrar componente\n");
+        printf("2 - Ordenar por nome (Bubble Sort)\n");
+        printf("3 - Ordenar por tipo (Insertion Sort)\n");
+        printf("4 - Ordenar por prioridade (Selection Sort)\n");
+        printf("5 - Buscar componente-chave por nome (Busca Binaria)\n");
+        printf("6 - Mostrar todos os componentes\n");
+        printf("0 - Sair\n");
+        printf("Opcao: ");
+        scanf("%d", &opcao);
+        getchar(); // Consome o '\n' deixado pelo scanf
+
+        switch (opcao) {
+            case 1:
+                if (total >= MAX_COMPONENTES) {
+                    printf("\nLimite maximo de componentes atingido!\n");
+                } else {
+                    // Entrada dos dados usando fgets (mais seguro que scanf para strings)
+                    printf("Nome do componente: ");
+                    fgets(componentes[total].nome, 30, stdin);
+                    limparQuebraLinha(componentes[total].nome);
+
+                    printf("Tipo do componente: ");
+                    fgets(componentes[total].tipo, 20, stdin);
+                    limparQuebraLinha(componentes[total].tipo);
+
+                    printf("Prioridade (1 a 10): ");
+                    scanf("%d", &componentes[total].prioridade);
+                    getchar();
+
+                    total++;
+                    ordenadoPorNome = 0; // Ao inserir, a lista deixa de estar ordenada
+                    printf("\nComponente cadastrado com sucesso!\n");
+                }
+                break;
+
+            case 2:
+                // Ordenação por nome utilizando Bubble Sort
+                medirTempoOrdenacao(bubbleSortNome, componentes, total, &comparacoes,
+                                     "Bubble Sort (por nome)");
+                ordenadoPorNome = 1; // Marca que agora está ordenado por nome
+                break;
+
+            case 3:
+                // Ordenação por tipo utilizando Insertion Sort
+                medirTempoOrdenacao(insertionSortTipo, componentes, total, &comparacoes,
+                                     "Insertion Sort (por tipo)");
+                ordenadoPorNome = 0;
+                break;
+
+            case 4:
+                // Ordenação por prioridade utilizando Selection Sort
+                medirTempoOrdenacao(selectionSortPrioridade, componentes, total, &comparacoes,
+                                     "Selection Sort (por prioridade)");
+                ordenadoPorNome = 0;
+                break;
+
+            case 5: {
+                // Busca binária: só pode ser feita se o vetor estiver ordenado por nome
+                if (!ordenadoPorNome) {
+                    printf("\nPara realizar a busca binaria, ordene primeiro por NOME.\n");
+                } else {
+                    char chave[30];
+                    printf("Digite o nome do componente-chave: ");
+                    fgets(chave, 30, stdin);
+                    limparQuebraLinha(chave);
+
+                    int pos = buscaBinariaPorNome(componentes, total, chave);
+
+                    if (pos != -1) {
+                        printf("\nComponente-chave encontrado!\n");
+                        printf("Nome: %s | Tipo: %s | Prioridade: %d\n",
+                               componentes[pos].nome,
+                               componentes[pos].tipo,
+                               componentes[pos].prioridade);
+                    } else {
+                        printf("\nComponente-chave nao encontrado.\n");
+                    }
+                }
+                break;
+            }
+
+            case 6:
+                mostrarComponentes(componentes, total);
+                break;
+
+            case 0:
+                printf("\nEncerrando sistema...\n");
+                break;
+
+            default:
+                printf("\nOpcao invalida.\n");
+        }
+
+    } while (opcao != 0);
+
+    return 0;
+}
+
+
+// Exibe todos os componentes cadastrados de forma formatada
+void mostrarComponentes(Componente v[], int n) {
+    if (n == 0) {
+        printf("\nNenhum componente cadastrado.\n");
+        return;
+    }
+
+    printf("\n--- COMPONENTES CADASTRADOS ---\n");
+    printf("%-20s %-15s %-10s\n", "Nome", "Tipo", "Prioridade");
+    printf("-----------------------------------------------\n");
+
+    for (int i = 0; i < n; i++) {
+        printf("%-20s %-15s %-10d\n", v[i].nome, v[i].tipo, v[i].prioridade);
+    }
+}
+
+
+// Bubble Sort por nome (string)
+// Conta o número de comparações realizadas
+
+void bubbleSortNome(Componente v[], int n, int *comparacoes) {
+    *comparacoes = 0;
+    Componente aux;
+
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - 1 - i; j++) {
+            (*comparacoes)++; // Conta cada comparação de strings
+            if (strcmp(v[j].nome, v[j + 1].nome) > 0) {
+                aux = v[j];
+                v[j] = v[j + 1];
+                v[j + 1] = aux;
+            }
+        }
+    }
+}
+
+
+// Insertion Sort por tipo (string)
+
+void insertionSortTipo(Componente v[], int n, int *comparacoes) {
+    *comparacoes = 0;
+
+    for (int i = 1; i < n; i++) {
+        Componente chave = v[i];
+        int j = i - 1;
+
+        while (j >= 0) {
+            (*comparacoes)++; // Conta cada comparação
+            if (strcmp(v[j].tipo, chave.tipo) > 0) {
+                v[j + 1] = v[j];
+                j--;
+            } else {
+                break;
+            }
+        }
+        v[j + 1] = chave;
+    }
+}
+
+
+// Selection Sort por prioridade (int)
+
+void selectionSortPrioridade(Componente v[], int n, int *comparacoes) {
+    *comparacoes = 0;
+
+    for (int i = 0; i < n - 1; i++) {
+        int min = i;
+
+        for (int j = i + 1; j < n; j++) {
+            (*comparacoes)++; // Conta cada comparação de inteiros
+            if (v[j].prioridade < v[min].prioridade) {
+                min = j;
+            }
+        }
+
+        if (min != i) {
+            Componente aux = v[i];
+            v[i] = v[min];
+            v[min] = aux;
+        }
+    }
+}
+
+
+// Busca Binária por nome (somente se estiver ordenado por nome)
+
+int buscaBinariaPorNome(Componente v[], int n, char chave[]) {
+    int inicio = 0, fim = n - 1;
+
+    while (inicio <= fim) {
+        int meio = (inicio + fim) / 2;
+        int cmp = strcmp(v[meio].nome, chave);
+
+        if (cmp == 0) {
+            return meio; // Encontrado
+        } else if (cmp < 0) {
+            inicio = meio + 1;
+        } else {
+            fim = meio - 1;
+        }
+    }
+    return -1; // Não encontrado
+}
+
+
+// Mede o tempo de execução de um algoritmo de ordenação e exibe o número de comparações realizadas
+void medirTempoOrdenacao(void (*algoritmo)(Componente[], int, int*),
+                         Componente v[], int n, int *comparacoes,
+                         const char *nomeAlgoritmo) {
+
+    clock_t inicio, fim;
+    double tempoGasto;
+
+    inicio = clock();              // Marca o tempo inicial
+    algoritmo(v, n, comparacoes);  // Executa o algoritmo passado por ponteiro de função
+    fim = clock();                 // Marca o tempo final
+
+    tempoGasto = (double)(fim - inicio) / CLOCKS_PER_SEC;
+
+    printf("\nAlgoritmo: %s\n", nomeAlgoritmo);
+    printf("Comparacoes realizadas: %d\n", *comparacoes);
+    printf("Tempo de execucao: %.6f segundos\n", tempoGasto);
+}
